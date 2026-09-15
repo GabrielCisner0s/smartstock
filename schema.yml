@@ -1,0 +1,1679 @@
+openapi: 3.0.3
+info:
+  title: SmartStock API
+  version: 1.0.0
+  description: API REST para la gestión de productos, inventario, movimientos de stock
+    y reportes.
+paths:
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: Autentica un usuario mediante email y contraseña y devuelve un
+        access token y un refresh token.
+      summary: Login
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/auth/profile/:
+    get:
+      operationId: auth_profile_retrieve
+      description: Obtiene los datos del usuario actualmente autenticado.
+      summary: Get authenticated user profile
+      tags:
+      - Users
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+          description: Perfil obtenido correctamente.
+        '401':
+          description: No autenticado.
+  /api/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      description: Genera un nuevo access token utilizando un refresh token válido.
+      summary: Refresh access token
+      tags:
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/auth/register/:
+    post:
+      operationId: auth_register_create
+      description: Crea un nuevo usuario en el sistema. No requiere autenticación.
+      summary: Register user
+      tags:
+      - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Register'
+          description: Usuario creado correctamente.
+        '400':
+          description: Los datos enviados no son válidos.
+  /api/inventory/dashboard/:
+    get:
+      operationId: inventory_dashboard_retrieve
+      description: "\n        Obtiene los indicadores principales del inventario.\n\n
+        \       Permisos:\n        - ADMIN: permitido.\n        - SUPERVISOR: permitido.\n
+        \       - EMPLOYEE: permitido.\n\n        Autenticación:\n        - Requiere
+        Bearer JWT.\n    "
+      summary: Dashboard de inventario
+      tags:
+      - Inventory
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryDashboard'
+          description: ''
+        '401':
+          description: Usuario no autenticado.
+        '403':
+          description: Usuario sin permisos.
+  /api/inventory/movements/:
+    get:
+      operationId: inventory_movements_list
+      description: "\n        Gestiona los movimientos de inventario.\n\n        Permisos:\n
+        \       - ADMIN: puede consultar y registrar movimientos.\n        - SUPERVISOR:
+        puede consultar y registrar movimientos.\n        - EMPLOYEE: puede consultar
+        y registrar movimientos.\n\n        Autenticación:\n        - Requiere Bearer
+        JWT.\n    "
+      summary: Listar y registrar movimientos de stock
+      parameters:
+      - in: query
+        name: movement_type
+        schema:
+          type: string
+        description: 'Filtra por tipo de movimiento: ENTRY, EXIT o ADJUSTMENT.'
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: 'Ordenamiento. Ejemplos: created_at, -created_at, quantity, -quantity.'
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: product
+        schema:
+          type: integer
+        description: Filtra los movimientos por ID de producto.
+      tags:
+      - Inventory
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStockMovementList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStockMovementList'
+          description: ''
+        '400':
+          description: Datos inválidos o stock insuficiente.
+        '401':
+          description: Usuario no autenticado.
+        '403':
+          description: Usuario sin permisos.
+    post:
+      operationId: inventory_movements_create
+      description: "\n        Gestiona los movimientos de inventario.\n\n        Permisos:\n
+        \       - ADMIN: puede consultar y registrar movimientos.\n        - SUPERVISOR:
+        puede consultar y registrar movimientos.\n        - EMPLOYEE: puede consultar
+        y registrar movimientos.\n\n        Autenticación:\n        - Requiere Bearer
+        JWT.\n    "
+      summary: Listar y registrar movimientos de stock
+      parameters:
+      - in: query
+        name: movement_type
+        schema:
+          type: string
+        description: 'Filtra por tipo de movimiento: ENTRY, EXIT o ADJUSTMENT.'
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: 'Ordenamiento. Ejemplos: created_at, -created_at, quantity, -quantity.'
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: product
+        schema:
+          type: integer
+        description: Filtra los movimientos por ID de producto.
+      tags:
+      - Inventory
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockMovementRequest'
+            examples:
+              EntradaDeStock:
+                value:
+                  product: 1
+                  movement_type: ENTRY
+                  quantity: 20
+                  reason: Compra de mercadería
+                summary: Entrada de stock
+              SalidaDeStock:
+                value:
+                  product: 1
+                  movement_type: EXIT
+                  quantity: 5
+                  reason: Venta
+                summary: Salida de stock
+              AjusteDeStock:
+                value:
+                  product: 1
+                  movement_type: ADJUSTMENT
+                  quantity: 15
+                  reason: Corrección de inventario
+                summary: Ajuste de stock
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StockMovementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StockMovementRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStockMovementList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockMovement'
+          description: ''
+        '400':
+          description: Datos inválidos o stock insuficiente.
+        '401':
+          description: Usuario no autenticado.
+        '403':
+          description: Usuario sin permisos.
+  /api/inventory/movements/{id}/:
+    get:
+      operationId: inventory_movements_retrieve
+      description: "\n        Obtiene un movimiento de inventario.\n\n        Permisos:\n
+        \       - ADMIN: permitido.\n        - SUPERVISOR: permitido.\n        - EMPLOYEE:
+        permitido.\n\n        Autenticación:\n        - Requiere Bearer JWT.\n    "
+      summary: Obtener movimiento de stock
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Inventory
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockMovement'
+          description: ''
+        '401':
+          description: Usuario no autenticado.
+        '403':
+          description: Usuario sin permisos.
+        '404':
+          description: Movimiento no encontrado.
+  /api/inventory/reports/:
+    get:
+      operationId: inventory_reports_list
+      description: Obtiene los movimientos de inventario realizados entre dos fechas.
+      summary: Reporte de movimientos de inventario
+      parameters:
+      - in: query
+        name: end
+        schema:
+          type: string
+          format: date
+        description: Fecha final del reporte.
+        required: true
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: start
+        schema:
+          type: string
+          format: date
+        description: Fecha inicial del reporte.
+        required: true
+      tags:
+      - Inventory
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStockMovementList'
+          description: ''
+        '400':
+          description: Los parámetros 'start' y 'end' son obligatorios o tienen un
+            formato inválido.
+        '401':
+          description: Usuario no autenticado.
+        '403':
+          description: Usuario sin permisos.
+  /api/inventory/reports/summary/:
+    get:
+      operationId: inventory_reports_summary_retrieve
+      description: "\n        Obtiene un resumen general del inventario.\n\n        Permisos:\n
+        \       - ADMIN: permitido.\n        - SUPERVISOR: permitido.\n        - EMPLOYEE:
+        permitido.\n\n        Autenticación:\n        - Requiere Bearer JWT.\n    "
+      summary: Resumen del inventario
+      tags:
+      - Inventory
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventorySummary'
+          description: ''
+        '401':
+          description: Usuario no autenticado.
+        '403':
+          description: Usuario sin permisos.
+  /api/products/:
+    get:
+      operationId: products_list
+      description: "\n        Lista los productos disponibles.\n\n        Permisos:\n
+        \       - ADMIN: acceso completo.\n        - SUPERVISOR: acceso de lectura.\n
+        \       - EMPLOYEE: acceso de lectura.\n\n        Requiere autenticación mediante
+        JWT.\n    "
+      summary: Listar productos
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+        description: Filtra por ID de categoría.
+      - in: query
+        name: created_after
+        schema:
+          type: string
+          format: date
+        description: Productos creados después de esta fecha.
+      - in: query
+        name: created_before
+        schema:
+          type: string
+          format: date
+        description: Productos creados antes de esta fecha.
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: 'Ordenamiento. Ejemplos: created_at, -created_at, price, -price,
+          stock, -stock.'
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: price_max
+        schema:
+          type: number
+        description: Precio máximo.
+      - in: query
+        name: price_min
+        schema:
+          type: number
+        description: Precio mínimo.
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Busca por SKU, nombre o descripción.
+      - in: query
+        name: status
+        schema:
+          type: string
+      - in: query
+        name: stock_max
+        schema:
+          type: integer
+        description: Stock máximo.
+      - in: query
+        name: stock_min
+        schema:
+          type: integer
+        description: Stock mínimo.
+      tags:
+      - Products
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductList'
+          description: ''
+        '400':
+          description: Datos inválidos.
+        '401':
+          description: Usuario no autenticado.
+        '403':
+          description: Usuario sin permisos.
+    post:
+      operationId: products_create
+      description: "\n        Lista los productos disponibles.\n\n        Permisos:\n
+        \       - ADMIN: acceso completo.\n        - SUPERVISOR: acceso de lectura.\n
+        \       - EMPLOYEE: acceso de lectura.\n\n        Requiere autenticación mediante
+        JWT.\n    "
+      summary: Listar productos
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+        description: Filtra por ID de categoría.
+      - in: query
+        name: created_after
+        schema:
+          type: string
+          format: date
+        description: Productos creados después de esta fecha.
+      - in: query
+        name: created_before
+        schema:
+          type: string
+          format: date
+        description: Productos creados antes de esta fecha.
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: 'Ordenamiento. Ejemplos: created_at, -created_at, price, -price,
+          stock, -stock.'
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: price_max
+        schema:
+          type: number
+        description: Precio máximo.
+      - in: query
+        name: price_min
+        schema:
+          type: number
+        description: Precio mínimo.
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Busca por SKU, nombre o descripción.
+      - in: query
+        name: status
+        schema:
+          type: string
+      - in: query
+        name: stock_max
+        schema:
+          type: integer
+        description: Stock máximo.
+      - in: query
+        name: stock_min
+        schema:
+          type: integer
+        description: Stock mínimo.
+      tags:
+      - Products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+        '400':
+          description: Datos inválidos.
+        '401':
+          description: Usuario no autenticado.
+        '403':
+          description: Usuario sin permisos.
+  /api/products/{id}/:
+    get:
+      operationId: products_retrieve
+      description: "\n    Obtiene la información de un producto específico.\n\n    Permisos:\n
+        \   - ADMIN: permitido.\n    - SUPERVISOR: permitido.\n    - EMPLOYEE: permitido.\n\n
+        \   Autenticación:\n    - Requiere Bearer JWT.\n    "
+      summary: Obtener producto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Products
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+        '401':
+          description: Usuario no autenticado.
+        '404':
+          description: Producto no encontrado.
+    put:
+      operationId: products_update
+      description: "\n    Obtiene la información de un producto específico.\n\n    Permisos:\n
+        \   - ADMIN: permitido.\n    - SUPERVISOR: permitido.\n    - EMPLOYEE: permitido.\n\n
+        \   Autenticación:\n    - Requiere Bearer JWT.\n    "
+      summary: Obtener producto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+        '401':
+          description: Usuario no autenticado.
+        '404':
+          description: Producto no encontrado.
+    patch:
+      operationId: products_partial_update
+      description: "\n    Obtiene la información de un producto específico.\n\n    Permisos:\n
+        \   - ADMIN: permitido.\n    - SUPERVISOR: permitido.\n    - EMPLOYEE: permitido.\n\n
+        \   Autenticación:\n    - Requiere Bearer JWT.\n    "
+      summary: Obtener producto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+        '401':
+          description: Usuario no autenticado.
+        '404':
+          description: Producto no encontrado.
+    delete:
+      operationId: products_destroy
+      description: "\n    Obtiene la información de un producto específico.\n\n    Permisos:\n
+        \   - ADMIN: permitido.\n    - SUPERVISOR: permitido.\n    - EMPLOYEE: permitido.\n\n
+        \   Autenticación:\n    - Requiere Bearer JWT.\n    "
+      summary: Obtener producto
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Products
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+        '401':
+          description: Usuario no autenticado.
+        '404':
+          description: Producto no encontrado.
+  /api/products/{id}/restore/:
+    put:
+      operationId: products_restore_update
+      description: Restores a previously soft-deleted product. This operation is restricted
+        to administrators.
+      summary: Restore deleted product
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+        '401':
+          description: Authentication required.
+        '403':
+          description: Administrator permissions required.
+        '404':
+          description: Deleted product not found.
+    patch:
+      operationId: products_restore_partial_update
+      description: Restores a previously soft-deleted product. This operation is restricted
+        to administrators.
+      summary: Restore deleted product
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+        '401':
+          description: Authentication required.
+        '403':
+          description: Administrator permissions required.
+        '404':
+          description: Deleted product not found.
+  /api/products/categories/:
+    get:
+      operationId: products_categories_list
+      description: Returns all product categories or creates a new category.
+      summary: List and create categories
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Categories
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+        '400':
+          description: Invalid category data.
+        '401':
+          description: Authentication required.
+        '403':
+          description: User does not have permission.
+    post:
+      operationId: products_categories_create
+      description: Returns all product categories or creates a new category.
+      summary: List and create categories
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '400':
+          description: Invalid category data.
+        '401':
+          description: Authentication required.
+        '403':
+          description: User does not have permission.
+  /api/products/categories/{id}/:
+    get:
+      operationId: products_categories_retrieve
+      description: Retrieves, updates or deletes an existing product category.
+      summary: Retrieve, update or delete a category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Categories
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '400':
+          description: Invalid category data.
+        '401':
+          description: Authentication required.
+        '403':
+          description: User does not have permission.
+        '404':
+          description: Category not found.
+    put:
+      operationId: products_categories_update
+      description: Retrieves, updates or deletes an existing product category.
+      summary: Retrieve, update or delete a category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '400':
+          description: Invalid category data.
+        '401':
+          description: Authentication required.
+        '403':
+          description: User does not have permission.
+        '404':
+          description: Category not found.
+    patch:
+      operationId: products_categories_partial_update
+      description: Retrieves, updates or deletes an existing product category.
+      summary: Retrieve, update or delete a category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '400':
+          description: Invalid category data.
+        '401':
+          description: Authentication required.
+        '403':
+          description: User does not have permission.
+        '404':
+          description: Category not found.
+    delete:
+      operationId: products_categories_destroy
+      description: Retrieves, updates or deletes an existing product category.
+      summary: Retrieve, update or delete a category
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Categories
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '400':
+          description: Invalid category data.
+        '401':
+          description: Authentication required.
+        '403':
+          description: User does not have permission.
+        '404':
+          description: Category not found.
+  /api/products/low-stock/:
+    get:
+      operationId: products_low_stock_list
+      description: Returns active products whose stock is at or below their configured
+        minimum stock level.
+      summary: List low-stock products
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - Products
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductList'
+          description: ''
+        '401':
+          description: Authentication required.
+        '403':
+          description: User does not have permission.
+  /api/reports/dashboard/:
+    get:
+      operationId: reports_dashboard_retrieve
+      description: Returns a general overview of the system, including relevant inventory
+        and product metrics.
+      summary: Get system dashboard
+      tags:
+      - Reports
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+          description: ''
+        '401':
+          description: Authentication required.
+components:
+  schemas:
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+    CategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+      required:
+      - name
+    Dashboard:
+      type: object
+      properties:
+        total_products:
+          type: integer
+        active_products:
+          type: integer
+        low_stock_products:
+          type: integer
+        entries_today:
+          type: integer
+        exits_today:
+          type: integer
+      required:
+      - active_products
+      - entries_today
+      - exits_today
+      - low_stock_products
+      - total_products
+    InventoryDashboard:
+      type: object
+      properties:
+        entries:
+          type: integer
+        exits:
+          type: integer
+        adjustments:
+          type: integer
+      required:
+      - adjustments
+      - entries
+      - exits
+    InventorySummary:
+      type: object
+      properties:
+        total_products:
+          type: integer
+        total_stock:
+          type: integer
+        low_stock:
+          type: integer
+        out_of_stock:
+          type: integer
+      required:
+      - low_stock
+      - out_of_stock
+      - total_products
+      - total_stock
+    MovementTypeEnum:
+      enum:
+      - ENTRY
+      - EXIT
+      - ADJUSTMENT
+      type: string
+      description: |-
+        * `ENTRY` - Entrada
+        * `EXIT` - Salida
+        * `ADJUSTMENT` - Ajuste
+    PaginatedCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    PaginatedProductList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+    PaginatedStockMovementList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockMovement'
+    PatchedCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+    PatchedProductRequest:
+      type: object
+      properties:
+        sku:
+          type: string
+          minLength: 1
+          maxLength: 30
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+        category_id:
+          type: integer
+          writeOnly: true
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        stock:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        minimum_stock:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        sku:
+          type: string
+          maxLength: 30
+        name:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+        category:
+          allOf:
+          - $ref: '#/components/schemas/Category'
+          readOnly: true
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        stock:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        minimum_stock:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category
+      - created_at
+      - id
+      - name
+      - price
+      - sku
+      - updated_at
+    ProductRequest:
+      type: object
+      properties:
+        sku:
+          type: string
+          minLength: 1
+          maxLength: 30
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+        category_id:
+          type: integer
+          writeOnly: true
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        stock:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        minimum_stock:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+      required:
+      - category_id
+      - name
+      - price
+      - sku
+    ProductSimple:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        sku:
+          type: string
+          maxLength: 30
+        name:
+          type: string
+          maxLength: 150
+      required:
+      - id
+      - name
+      - sku
+    ProductSimpleRequest:
+      type: object
+      properties:
+        sku:
+          type: string
+          minLength: 1
+          maxLength: 30
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+      required:
+      - name
+      - sku
+    Profile:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+        first_name:
+          type: string
+          readOnly: true
+        last_name:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - email
+      - first_name
+      - id
+      - last_name
+      - phone
+      - role
+      - username
+    Register:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        phone:
+          type: string
+          maxLength: 20
+      required:
+      - email
+      - username
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        phone:
+          type: string
+          maxLength: 20
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+      - username
+    RoleEnum:
+      enum:
+      - ADMIN
+      - SUPERVISOR
+      - EMPLOYEE
+      type: string
+      description: |-
+        * `ADMIN` - Administrador
+        * `SUPERVISOR` - Supervisor
+        * `EMPLOYEE` - Empleado
+    StatusEnum:
+      enum:
+      - ACTIVE
+      - INACTIVE
+      type: string
+      description: |-
+        * `ACTIVE` - Activo
+        * `INACTIVE` - Inactivo
+    StockMovement:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        product:
+          allOf:
+          - $ref: '#/components/schemas/ProductSimple'
+          readOnly: true
+        movement_type:
+          $ref: '#/components/schemas/MovementTypeEnum'
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 1
+        reason:
+          type: string
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/UserSimple'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - created_by
+      - id
+      - movement_type
+      - product
+      - quantity
+    StockMovementRequest:
+      type: object
+      properties:
+        product_id:
+          type: integer
+          writeOnly: true
+        movement_type:
+          $ref: '#/components/schemas/MovementTypeEnum'
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 1
+        reason:
+          type: string
+      required:
+      - movement_type
+      - product_id
+      - quantity
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    UserSimple:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+      required:
+      - id
+      - username
+    UserSimpleRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+      required:
+      - username
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

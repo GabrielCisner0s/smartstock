@@ -1,3 +1,70 @@
+from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import models
 
-# Create your models here.
+from products.models import Product
+
+
+class StockMovement(models.Model):
+
+    class MovementType(models.TextChoices):
+        ENTRY = "ENTRY", "Entrada"
+        EXIT = "EXIT", "Salida"
+        ADJUSTMENT = "ADJUSTMENT", "Ajuste"
+
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        related_name="movements",
+    )
+
+
+    movement_type = models.CharField(
+        max_length=20,
+        choices=MovementType.choices,
+    )
+
+
+    quantity = models.PositiveIntegerField(
+        validators=[
+            MinValueValidator(1)
+        ]
+    )
+
+
+    reason = models.TextField(
+        blank=True
+    )
+
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+    )
+
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+
+    class Meta:
+
+        ordering = [
+            "-created_at"
+        ]
+
+        indexes = [
+            models.Index(fields=["product"]),
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["movement_type"]),
+        ]
+
+
+    def __str__(self):
+
+        return (
+            f"{self.product.name} - "
+            f"{self.movement_type}"
+        )
